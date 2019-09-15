@@ -68,6 +68,26 @@ class UpdateHero(graphene.Mutation):
         return UpdateHero(ok=ok, hero=None)
 
 
+class DeleteHero(graphene.Mutation):
+    ok = graphene.Boolean()
+
+    class Arguments:
+        id = graphene.ID()
+
+    ok = graphene.Boolean()
+
+    @staticmethod
+    def mutate(root, info, id, input=None):
+        ok = False
+        obj = Hero.objects.get(pk=id)
+        if obj:
+            ok = True
+            obj.delete()
+
+        return DeleteHero(ok=ok)
+
+
 class Mutation(graphene.ObjectType):
     create_hero = CreateHero.Field()
     update_hero = UpdateHero.Field()
+    delete_hero = DeleteHero.Field()
