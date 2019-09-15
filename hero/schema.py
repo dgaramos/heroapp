@@ -1,6 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
-from hero.models import Hero, SuperHeroTeam
+from hero.models import Hero, HeroTeam
 
 
 class HeroType(DjangoObjectType):
@@ -8,16 +8,16 @@ class HeroType(DjangoObjectType):
         model = Hero
 
 
-class SuperHeroTeamType(DjangoObjectType):
+class HeroTeamType(DjangoObjectType):
     class Meta:
-        model = SuperHeroTeam
+        model = HeroTeam
 
 
 class Query(graphene.ObjectType):
     hero = graphene.Field(HeroType, id=graphene.Int())
-    superHeroTeam = graphene.Field(SuperHeroTeamType, id=graphene.Int())
+    HeroTeam = graphene.Field(HeroTeamType, id=graphene.Int())
     heroes = graphene.List(HeroType)
-    superHeroTeams = graphene.List(SuperHeroTeamType)
+    HeroTeams = graphene.List(HeroTeamType)
 
     def resolve_hero(self, info, **kwargs):
         id = kwargs.get('id')
@@ -27,19 +27,19 @@ class Query(graphene.ObjectType):
 
         return None
 
-    def resolve_superHeroTeam(self, info, **kwargs):
+    def resolve_heroTeam(self, info, **kwargs):
         id = kwargs.get('id')
 
         if id is not None:
-            return SuperHeroTeam.objects.get(pk=id)
+            return HeroTeam.objects.get(pk=id)
 
         return None
 
     def resolve_heroes(self, info, **kwargs):
         return Hero.objects.all()
 
-    def resolve_superHeroTeams(self, info, **kwargs):
-        return SuperHeroTeam.objects.all()
+    def resolve_heroTeams(self, info, **kwargs):
+        return HeroTeam.objects.all()
 
 
 class HeroInput(graphene.InputObjectType):
@@ -49,7 +49,7 @@ class HeroInput(graphene.InputObjectType):
     mainTeam = graphene.String()
 
 
-class SuperHeroTeamInput(graphene.InputObjectType):
+class HeroTeamInput(graphene.InputObjectType):
     id = graphene.ID()
     name = graphene.String()
     heroes = graphene.List(HeroInput)
@@ -66,7 +66,8 @@ class CreateHero(graphene.Mutation):
     @staticmethod
     def mutate(root, info, input=None):
         ok = True
-        hero_instance = Hero(name=input.name, gender=input.gender, mainTeam=input.mainTeam)
+        hero_instance =\
+            Hero(name=input.name, gender=input.gender, mainTeam=input.mainTeam)
         hero_instance.save()
         return CreateHero(ok=ok, hero=hero_instance)
 
@@ -112,12 +113,12 @@ class DeleteHero(graphene.Mutation):
         return DeleteHero(ok=ok)
 
 
-class CreateSuperHeroTeam(graphene.Mutation):
+class CreateHeroTeam(graphene.Mutation):
     class Arguments:
-        input = SuperHeroTeamInput(required=True)
+        input = HeroTeamInput(required=True)
 
     ok = graphene.Boolean()
-    superHeroTeam = graphene.Field(SuperHeroTeamType)
+    HeroTeam = graphene.Field(HeroTeamType)
 
     @staticmethod
     def mutate(root, info, input=None):
@@ -126,45 +127,46 @@ class CreateSuperHeroTeam(graphene.Mutation):
         for hero_input in input.heroes:
             hero = Hero.objects.get(pk=hero_input.id)
             if hero is None:
-                return CreateSuperHeroTeam(ok=False, superHeroTeam=None)
+                return CreateHeroTeam(ok=False, HeroTeam=None)
             heroes.append(hero)
-        super_hero_team_instance = SuperHeroTeam(
+        hero_team_instance = HeroTeam(
           name=input.name,
           editor=input.editor
           )
-        super_hero_team_instance.save()
-        super_hero_team_instance.heroes.set(heroes)
-        return CreateSuperHeroTeam(ok=ok, superHeroTeam=super_hero_team_instance)
+        hero_team_instance.save()
+        hero_team_instance.heroes.set(heroes)
+        return\
+            CreateHeroTeam(ok=ok, HeroTeam=hero_team_instance)
 
 
-class UpdateSuperHeroTeam(graphene.Mutation):
+class UpdateHeroTeam(graphene.Mutation):
     class Arguments:
         id = graphene.Int(required=True)
-        input = SuperHeroTeamInput(required=True)
+        input = HeroTeamInput(required=True)
 
     ok = graphene.Boolean()
-    superHeroTeam = graphene.Field(SuperHeroTeamType)
+    HeroTeam = graphene.Field(HeroTeamType)
 
     @staticmethod
     def mutate(root, info, id, input=None):
         ok = False
-        super_hero_team_instance = SuperHeroTeam.objects.get(pk=id)
-        if super_hero_team_instance:
+        hero_team_instance = HeroTeam.objects.get(pk=id)
+        if hero_team_instance:
             ok = True
             heroes = []
             for hero_input in input.heroes:
                 hero = Hero.objects.get(pk=hero_input.id)
                 if hero is None:
-                    return UpdateSuperHeroTeam(ok=False, movie=None)
+                    return UpdateHeroTeam(ok=False, movie=None)
                 heroes.append(hero)
-            super_hero_team_instance.name = input.name
-            super_hero_team_instance.editor = input.edit
-            super_hero_team_instance.heroes.set(heroes)
-            return UpdateSuperHeroTeam(ok=ok, superHeroTeam=super_hero_team_instance)
-        return UpdateSuperHeroTeam(ok=ok, superHeroTeam=None)
+            hero_team_instance.name = input.name
+            hero_team_instance.editor = input.edit
+            hero_team_instance.heroes.set(heroes)
+            return UpdateHeroTeam(ok=ok, HeroTeam=hero_team_instance)
+        return UpdateHeroTeam(ok=ok, HeroTeam=None)
 
 
-class DeleteSuperHeroTeam(graphene.Mutation):
+class DeleteHeroTeam(graphene.Mutation):
     ok = graphene.Boolean()
 
     class Arguments:
@@ -175,18 +177,18 @@ class DeleteSuperHeroTeam(graphene.Mutation):
     @staticmethod
     def mutate(root, info, id, input=None):
         ok = False
-        obj = SuperHeroTeam.objects.get(pk=id)
+        obj = HeroTeam.objects.get(pk=id)
         if obj:
             ok = True
             obj.delete()
 
-        return DeleteSuperHeroTeam(ok=ok)
+        return DeleteHeroTeam(ok=ok)
 
 
 class Mutation(graphene.ObjectType):
     create_hero = CreateHero.Field()
     update_hero = UpdateHero.Field()
     delete_hero = DeleteHero.Field()
-    create_super_hero_team = CreateSuperHeroTeam.Field()
-    update_super_hero_team = UpdateSuperHeroTeam.Field()
-    delete_super_hero_team = DeleteSuperHeroTeam.Field()
+    create_hero_team = CreateHeroTeam.Field()
+    update_hero_team = UpdateHeroTeam.Field()
+    delete_hero_team = DeleteHeroTeam.Field()
